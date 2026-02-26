@@ -1,3 +1,22 @@
+# 第一步：添加项目根目录到Python路径，确保能找到mmdet3d
+import sys
+sys.path.insert(0, '/workspace/bevfusion')  # 项目根目录
+
+# 第二步：注释掉依赖CUDA扩展的导入，替换为纯Python实现
+# from mmdet3d.core.bbox.box_np_ops import points_cam2img  # 注释掉这行
+import numpy as np
+def points_cam2img(points_3d, proj_mat):
+    """纯Python实现，无CUDA依赖，仅用于生成info文件"""
+    points_num = len(points_3d)
+    points_4d = np.concatenate([points_3d, np.ones((points_num, 1))], axis=-1)
+    points_2d = points_4d @ proj_mat.T
+    points_2d[:, 2] = np.clip(points_2d[:, 2], a_min=1e-5, a_max=1e5)
+    points_2d[:, 0] /= points_2d[:, 2]
+    points_2d[:, 1] /= points_2d[:, 2]
+    return points_2d[:, :2]
+
+
+
 import mmcv
 import numpy as np
 import os
@@ -176,7 +195,10 @@ def _fill_trainval_infos(nusc,
         pose_record = nusc.get('ego_pose', sd_rec['ego_pose_token'])
         lidar_path, boxes, _ = nusc.get_sample_data(lidar_token)
 
-        mmcv.check_file_exist(lidar_path)
+        # mmcv.check_file_exist(lidar_path)
+        if not os.path.exists(lidar_path):
+            print(f"警告：文件缺失，跳过 {lidar_path}")
+            continue
 
         info = {
             'lidar_path': lidar_path,

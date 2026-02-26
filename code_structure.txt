@@ -1,0 +1,75 @@
+configs/ 存放不同传感器配置、数据集（如 NuScenes）、模型训练 / 推理的配置文件，支持灵活调参
+
+
+
+
+mmdet3d/
+    core/：核心组件层，是 3D 感知的基础核心模块，拆解子目录：
+
+        anchor/：锚框相关，3D 目标检测中锚框的生成、匹配等（比如 3D anchor 的计算）
+        utils/：core 层的工具函数，比如坐标转换、特征处理等
+        points/：点云数据处理，比如点云采样、变换、特征提取的基础函数
+        post_processing/：后处理模块，比如 3D 检测结果的 NMS、坐标映射、结果解析等
+        bbox/：3D 边界框（bbox）的定义、计算（比如 3D IoU、bbox 编码 / 解码）
+        voxel/：体素化相关，点云转体素的核心逻辑，比如体素生成、特征聚合
+        init.py：模块导出，让 core 成为可导入的包
+
+    ops/：算子层，自定义的 CUDA/TPU 算子或 PyTorch 封装的稀疏卷积、点云操作等，是高性能 3D 感知算子的实现：
+
+        sparse_block.py：稀疏卷积块的定义（比如 SparseBasicBlock）
+        norm.py：归一化相关算子（比如适配稀疏张量的 BN）
+        bev_pool/：BEV 池化相关算子（BEV 视角特征聚合的核心算子）
+        spconv/：稀疏卷积（spconv 库）的封装，适配 3D 稀疏张量卷积
+        paconv/：PAConv（Point-wise Adaptive Convolution）算子，点云自适应卷积
+        roiaware_pool3d/：3D RoI-aware 池化，针对 3D RoI 的特征提取
+        pointnet_modules/：PointNet/PointNet++ 相关模块，点云特征提取
+        group_points/：点云分组算子（比如 ball query 分组、knn 分组）
+        voxel/：体素相关算子（比如体素卷积、体素特征编码）
+        knn/：K 近邻查询算子，点云处理中找邻域点
+        gather_points/：点云特征聚合（gather）算子
+        iou3d/：3D IoU 计算算子（比如 3D 框的交并比、GIoU 等）
+        interpolate/：插值算子（比如点云 / 体素特征的插值）
+        feature_decorator/：特征装饰器，特征增强 / 变换的算子
+        furthest_point_sample/：最远点采样（FPS）算子，点云下采样
+        ball_query/：球查询算子，点云邻域搜索
+        init.py：算子模块导出
+
+    apis/：接口层，训练、测试的统一 API 入口：
+
+        train.py：训练流程的核心 API，比如启动训练、梯度更新、epoch 管理等
+        test.py：测试 / 推理流程的核心 API，比如模型推理、指标计算、结果保存
+        init.py：导出训练 / 测试 API，方便上层调用
+
+    utils/：全局工具层，整个 mmdet3d 的通用工具：
+
+        logger.py：日志管理，训练 / 测试过程的日志输出、记录
+        config.py：配置文件解析，比如解析 configs / 下的配置，合并、验证配置参数
+        syncbn.py：同步 BN（SyncBN）的封装，多卡训练时的归一化
+        init.py：工具模块导出
+
+    runner/：运行器层，训练 / 推理的执行引擎：
+
+        epoch_based_runner.py：基于 epoch 的运行器，管理训练的 epoch 循环、参数更新、验证触发等
+        init.py：导出运行器模块
+
+    models/：模型层，3D 感知模型的核心组件，包括 backbone、neck、head 等：
+
+        backbones/：骨干网络，比如 SparseEncoder（稀疏编码器，处理体素化点云的特征提取）、PointNet、ResNet3D 等
+        necks/： Neck 层（特征融合 / 增强），比如 FPN3D、BEVNeck 等
+        heads/：检测头，比如 3D BBox Head、BEVDet Head、Seg Head 等
+        detectors/：完整检测器，整合 backbone+neck+head 的端到端模型（比如 SECOND、Part-A2、BEVDet 等）
+        其他（如 losses/）：损失函数，3D 检测的损失（比如 3D IoU Loss、RegLoss 等）
+
+    datasets/：数据集层，3D 数据集的加载、预处理、格式转换：
+
+        dataset_wrappers.py：数据集包装器，比如混合数据集、重复采样数据集等
+        custom_3d.py：自定义 3D 数据集的基类，用户可继承实现自定义数据集
+        其他（如 nuscenes_dataset.py、kitti_dataset.py）：主流 3D 数据集（NuScenes、KITTI）的适配，加载标注、数据增强、格式转换等
+
+
+
+
+
+
+
+tools/ 提供训练、测试、模型导出、数据预处理以及可视化等工具脚本
