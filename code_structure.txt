@@ -52,6 +52,15 @@ mmdet3d/
         epoch_based_runner.py：基于 epoch 的运行器，管理训练的 epoch 循环、参数更新、验证触发等
         init.py：导出运行器模块
 
+    datasets/：数据集层，3D 数据集的加载、预处理、格式转换：
+
+        dataset_wrappers.py：数据集包装器，比如混合数据集、重复采样数据集等
+        custom_3d.py：自定义 3D 数据集的基类，用户可继承实现自定义数据集
+        其他（如 nuscenes_dataset.py、kitti_dataset.py）：主流 3D 数据集（NuScenes、KITTI）的适配，加载标注、数据增强、格式转换等
+    
+
+
+
     models/：模型层，3D 感知模型的核心组件，包括 backbone、neck、head 等：
 
         backbones/：骨干网络，比如 SparseEncoder（稀疏编码器，处理体素化点云的特征提取）、PointNet、ResNet3D 等
@@ -60,13 +69,24 @@ mmdet3d/
         detectors/：完整检测器，整合 backbone+neck+head 的端到端模型（比如 SECOND、Part-A2、BEVDet 等）
         其他（如 losses/）：损失函数，3D 检测的损失（比如 3D IoU Loss、RegLoss 等）
 
-    datasets/：数据集层，3D 数据集的加载、预处理、格式转换：
-
-        dataset_wrappers.py：数据集包装器，比如混合数据集、重复采样数据集等
-        custom_3d.py：自定义 3D 数据集的基类，用户可继承实现自定义数据集
-        其他（如 nuscenes_dataset.py、kitti_dataset.py）：主流 3D 数据集（NuScenes、KITTI）的适配，加载标注、数据增强、格式转换等
-
-
+        
+        输入数据（相机图像+LiDAR点云）
+        ↓
+        backbones/：
+        - 图像骨干：ResNet 提取图像特征
+        - 点云骨干：SparseEncoder 提取体素化点云特征
+        ↓
+        necks/：
+        - BEVNeck：融合图像→BEV 特征 + LiDAR→BEV 特征
+        ↓
+        heads/：
+        - BEVDetHead：预测 BEV 视角 3D 目标框（分类+回归）
+        ↓
+        losses/：
+        - 计算分类损失（FocalLoss）+ 回归损失（SmoothL1Loss）+ 3D IoULoss
+        ↓
+        detectors/：
+        - BEVFusion：整合全流程，输出最终检测结果 + 计算总损失用于训练
 
 
 

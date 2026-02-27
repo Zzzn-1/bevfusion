@@ -32,6 +32,7 @@ class GeneralizedResNet(nn.ModuleList):
             in_channels = out_channels
             self.append(blocks)
 
+    # 前向传播
     def forward(self, x: torch.Tensor) -> List[torch.Tensor]:
         outputs = []
         for module in self:
